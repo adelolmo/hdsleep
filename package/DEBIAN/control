@@ -1,0 +1,9 @@
+Package: hdsleep
+Version: {{version}}
+Section: extras
+Priority: standard
+Architecture: all
+Depends: sysstat
+Maintainer: Andoni del Olmo <andoni.delolmo@gmail.com>
+Installed-Size: {{size}}
+Description: Brings hard disks into standby mode when not in use.

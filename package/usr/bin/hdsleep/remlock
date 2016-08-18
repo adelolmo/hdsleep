@@ -4,18 +4,26 @@
 . $CONFIG_FILE
 
 remove(){	
-	logger "[hdsleep] remove hdsleep.lock"
-	rm -f $LOCK_FILE
+	logger "[hdsleep] remove $LOCK_DIR/$1"
+	rm -f $LOCK_DIR/$1
 	exit 0
 }
 
-if [ -e $LOCK_FILE ]; then
-	state=$(/sbin/hdparm -C $disk | sed '3!d' | grep -oE "(active|standby)")
-	if [ "$state" == "active" ]; then
-		remove
-	fi
+IFS=',' read -ra ADDR <<< "$disk"
+for i in "${ADDR[@]}"; do
 
-	if [ "$(/usr/bin/hdsleep/hdusage)" -gt 0 ]; then		
-		remove
-	fi
-fi
+    adisk=$i
+    name=$(echo $adisk | grep -oE '[a-z]*$')
+
+    if [ -e $LOCK_DIR/$name ]; then
+        state=$(/sbin/hdparm -C $adisk | sed '3!d' | grep -oE "(active|standby)")
+        if [ "$state" == "active" ]; then
+            remove $name
+        fi
+
+        if [ "$(/usr/bin/hdsleep/hdusage $adisk)" -gt 0 ]; then
+            remove $name
+        fi
+    fi
+
+done

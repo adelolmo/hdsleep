@@ -1,13 +1,13 @@
 #!/bin/bash
 
-. /usr/bin/hdsleep/constants
-. $CONFIG_FILE
+#. /usr/bin/hdsleep/constants
 
-if [ -z $disk ]; then
-        echo "Missing disk configuration. Edit $CONFIG_FILE with the necessary disk value."
-        exit 1
+if [ -z $1 ]; then
+#        echo "Missing disk configuration. Edit $CONFIG_FILE with the necessary disk value."
+    echo "Missing disk parameter."
+    exit 1
 fi
 
-usage1=$(iostat -x $disk 5 2 | sed '13!d' | cut -c118)
-usage2=$(iostat -x $disk 5 2 | sed '13!d' | cut -c118)
+usage1=$(iostat -x $1 5 2 | sed '13!d' | cut -c118)
+usage2=$(iostat -x $1 5 2 | sed '13!d' | cut -c118)
 echo "$(($usage1 + $usage2))"

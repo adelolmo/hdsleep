@@ -18,47 +18,56 @@ usage(){
 	exit 1
 }
 
-if [ ! -e $disk ]; then
-	usage
-fi
+mkdir -p $TO_SLEEP_DIR $LOCK_DIR
 
-mkdir -p $TMP
-# get hdd activity
-cpu=$(/usr/bin/hdsleep/hdusage)
+IFS=',' read -ra ADDR <<< "$disk"
+for i in "${ADDR[@]}"; do
 
-if [ $cpu -eq 0 ]; then
-    # exit if lock file found
-    if [ -e $LOCK_FILE ]; then exit 0; fi
+    adisk=$i
+    name=$(echo $adisk | grep -oE '[a-z]*$')
 
-    logger "[hdsleep] No activity in hdd $disk."
-
-    # exit if ready_to_sleep file is not found    
-    if [ ! -e $READY_TO_SLEEP_FILE ]; then 
-        echo $(date) > $READY_TO_SLEEP_FILE
-        logger "[hdsleep] Create $READY_TO_SLEEP_FILE."
-        exit 0
+    if [ ! -e $adisk ]; then
+        logger "[hdsleep] Disk not found $adisk."
+        continue
     fi
 
-    rm -f $READY_TO_SLEEP_FILE
+    # get hdd activity
+    cpu=$(/usr/bin/hdsleep/hdusage $adisk)
 
-    case $mode in
-        standby)
-            eval "/sbin/hdparm -y $disk"
-            logger "[hdsleep] Bring $disk to $mode mode."            
-            ;;    
-        sleep)
-            eval "/sbin/hdparm -Y $disk"
-            logger "[hdsleep] Bring $disk to $mode mode."            
-            ;;
-        *)
-            echo "Missing hdd stop mode."
-            exit 1
-            ;;
-    esac
+    if [ $cpu -eq 0 ]; then
+        # exit if lock file found
+        if [ -e $LOCK_DIR/$name ]; then continue; fi
 
-    echo $(date) > $LOCK_FILE
-else
-    logger "[hdsleep] Current cpu activity in hdd $disk: $cpu"
-    rm -f $LOCK_FILE
-    rm -f $READY_TO_SLEEP_FILE
-fi
+        logger "[hdsleep] No activity in hdd $adisk."
+
+        # exit if ready_to_sleep file is not found
+        if [ ! -e $TO_SLEEP_DIR/$name ]; then
+            echo $(date) > $TO_SLEEP_DIR/$name
+            logger "[hdsleep] Create $TO_SLEEP_DIR/$name."
+            continue;
+        fi
+
+        rm -f $TO_SLEEP_DIR/$name
+
+        case $mode in
+            standby)
+                eval "/sbin/hdparm -y $adisk"
+                logger "[hdsleep] Bring $adisk to $mode mode."
+                ;;
+            sleep)
+                eval "/sbin/hdparm -Y $adisk"
+                logger "[hdsleep] Bring $adisk to $mode mode."
+                ;;
+            *)
+                echo "Missing hdd stop mode."
+                exit 1
+                ;;
+        esac
+
+        echo $(date) > $LOCK_DIR/$name
+    else
+        logger "[hdsleep] Current cpu activity in hdd $adisk: $cpu"
+        rm -f $LOCK_DIR/$name
+        rm -f $TO_SLEEP_DIR/$name
+    fi
+done

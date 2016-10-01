@@ -27,7 +27,7 @@ for i in "${ADDR[@]}"; do
     name=$(echo $adisk | grep -oE '[a-z]*$')
 
     if [ ! -e $adisk ]; then
-        logger "[hdsleep] Disk not found $adisk."
+        logger --tag hdsleep "Disk not found $adisk."
         continue
     fi
 
@@ -38,12 +38,12 @@ for i in "${ADDR[@]}"; do
         # exit if lock file found
         if [ -e $LOCK_DIR/$name ]; then continue; fi
 
-        logger "[hdsleep] No activity in hdd $adisk."
+        logger --tag hdsleep "No activity in hdd $adisk."
 
         # exit if ready_to_sleep file is not found
         if [ ! -e $TO_SLEEP_DIR/$name ]; then
             echo $(date) > $TO_SLEEP_DIR/$name
-            logger "[hdsleep] Create $TO_SLEEP_DIR/$name."
+            logger --tag hdsleep "Create $TO_SLEEP_DIR/$name."
             continue;
         fi
 
@@ -52,11 +52,11 @@ for i in "${ADDR[@]}"; do
         case $mode in
             standby)
                 eval "/sbin/hdparm -y $adisk"
-                logger "[hdsleep] Bring $adisk to $mode mode."
+                logger --tag hdsleep "Bring $adisk to $mode mode."
                 ;;
             sleep)
                 eval "/sbin/hdparm -Y $adisk"
-                logger "[hdsleep] Bring $adisk to $mode mode."
+                logger --tag hdsleep "Bring $adisk to $mode mode."
                 ;;
             *)
                 echo "Missing hdd stop mode."
@@ -66,7 +66,7 @@ for i in "${ADDR[@]}"; do
 
         echo $(date) > $LOCK_DIR/$name
     else
-        logger "[hdsleep] Current cpu activity in hdd $adisk: $cpu"
+        logger --tag hdsleep "Current cpu activity in hdd $adisk: $cpu"
         rm -f $LOCK_DIR/$name
         rm -f $TO_SLEEP_DIR/$name
     fi
